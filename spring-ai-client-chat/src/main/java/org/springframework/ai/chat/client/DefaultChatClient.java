@@ -16,23 +16,9 @@
 
 package org.springframework.ai.chat.client;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
-import reactor.core.publisher.Flux;
-
 import org.springframework.ai.chat.client.advisor.ChatModelCallAdvisor;
 import org.springframework.ai.chat.client.advisor.ChatModelStreamAdvisor;
 import org.springframework.ai.chat.client.advisor.DefaultAroundAdvisorChain;
@@ -64,6 +50,14 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * The default implementation of {@link ChatClient} as created by the
@@ -513,7 +507,9 @@ public class DefaultChatClient implements ChatClient {
 			// CHECKSTYLE:OFF
 			var chatClientResponse = observation.observe(() -> {
 				// Apply the advisor chain that terminates with the ChatModelCallAdvisor.
-				return this.advisorChain.nextCall(chatClientRequest);
+				var response = this.advisorChain.nextCall(chatClientRequest);
+				observationContext.setResponse(response);
+				return response;
 			});
 			// CHECKSTYLE:ON
 			return chatClientResponse != null ? chatClientResponse : ChatClientResponse.builder().build();
@@ -572,6 +568,7 @@ public class DefaultChatClient implements ChatClient {
 				// @formatter:off
 				// Apply the advisor chain that terminates with the ChatModelStreamAdvisor.
 				return this.advisorChain.nextStream(chatClientRequest)
+						.doOnNext(observationContext::mergeResponse)
 						.doOnError(observation::error)
 						.doFinally(s -> observation.stop())
 						.contextWrite(ctx -> ctx.put(ObservationThreadLocalAccessor.KEY, observation));
