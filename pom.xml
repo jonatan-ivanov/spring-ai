@@ -48,6 +48,9 @@
 
 
 		<module>spring-ai-retry</module>
+
+		<module>spring-ai-dev-samples/spring-ai-dev-sample-minimal</module>
+
 		<module>spring-ai-spring-boot-docker-compose</module>
 		<module>spring-ai-spring-boot-testcontainers</module>
 		<module>spring-ai-spring-cloud-bindings</module>
