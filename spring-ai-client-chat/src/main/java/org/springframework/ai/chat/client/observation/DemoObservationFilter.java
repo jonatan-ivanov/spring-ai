@@ -1,24 +1,19 @@
-package org.springframework.ai.samples.dev.minimal;
+package org.springframework.ai.chat.client.observation;
 
 import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationFilter;
-import org.springframework.ai.chat.client.observation.ChatClientObservationContext;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.observation.ChatModelObservationContext;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
 public class DemoObservationFilter implements ObservationFilter {
 
-	@NonNull
 	@Override
-	public Observation.Context map(@NonNull Observation.Context context) {
+	public Observation.Context map(Observation.Context context) {
 		if (context instanceof ChatClientObservationContext chatClientObservationContext) {
 			String prompt = prompt(chatClientObservationContext);
 			String completion = completion(chatClientObservationContext);
@@ -50,10 +45,7 @@ public class DemoObservationFilter implements ObservationFilter {
 	}
 
 	private String completion(ChatClientObservationContext context) {
-		if (context.getResponse() == null || context.getResponse().chatResponse() == null) {
-			return "";
-		}
-		return generationsToString(context.getResponse().chatResponse().getResults());
+		return context.getResponseText() != null ? context.getResponseText() : "";
 	}
 
 	private String completion(ChatModelObservationContext context) {

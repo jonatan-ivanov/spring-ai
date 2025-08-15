@@ -21,8 +21,7 @@ import org.springframework.ai.chat.client.ChatClientAttributes;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.observation.AiOperationMetadata;
 import org.springframework.ai.observation.conventions.AiOperationType;
@@ -32,6 +31,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Context used to store metadata for chat client workflows.
@@ -45,7 +45,7 @@ public class ChatClientObservationContext extends Observation.Context {
 	private final ChatClientRequest request;
 
 	@Nullable
-	private ChatClientResponse response;
+	private String responseText;
 
 	private final AiOperationMetadata operationMetadata = new AiOperationMetadata(AiOperationType.FRAMEWORK.value(),
 			AiProvider.SPRING_AI.value());
@@ -72,32 +72,28 @@ public class ChatClientObservationContext extends Observation.Context {
 		return this.request;
 	}
 
-	public void setResponse(ChatClientResponse response) {
-		this.response = response;
+	public void appendResponse(ChatClientResponse response) {
+		if (this.responseText == null) {
+			setResponse(response);
+		}
+		else if (response.chatResponse() != null) {
+			this.responseText += generationsToString(response.chatResponse().getResults());
+		}
 	}
 
-	public void mergeResponse(ChatClientResponse response) {
-		if (this.response == null) {
-			this.response = response;
+	public void setResponse(ChatClientResponse response) {
+		if (response.chatResponse() != null) {
+			this.responseText = generationsToString(response.chatResponse().getResults());
 		}
-		else {
-			String nextText = response.chatResponse().getResult().getOutput().getText();
-			if (nextText != null) {
-				AssistantMessage currentMessage = this.response.chatResponse().getResult().getOutput();
-				String currentText = currentMessage.getText();
-				AssistantMessage newMessage = new AssistantMessage(currentText + nextText);
-				ChatResponse newResponse = ChatResponse.builder()
-					.from(this.response.chatResponse())
-					.generations(List.of(new Generation(newMessage)))
-					.build();
-				this.response = this.response.mutate().chatResponse(newResponse).build();
-			}
-		}
+	}
+
+	private String generationsToString(List<Generation> generations) {
+		return generations.stream().map(Generation::getOutput).map(Message::getText).collect(Collectors.joining("\n"));
 	}
 
 	@Nullable
-	public ChatClientResponse getResponse() {
-		return this.response;
+	String getResponseText() {
+		return this.responseText;
 	}
 
 	public AiOperationMetadata getOperationMetadata() {

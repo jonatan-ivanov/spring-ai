@@ -568,7 +568,7 @@ public class DefaultChatClient implements ChatClient {
 				// @formatter:off
 				// Apply the advisor chain that terminates with the ChatModelStreamAdvisor.
 				return this.advisorChain.nextStream(chatClientRequest)
-						.doOnNext(observationContext::mergeResponse)
+						.doOnNext(observationContext::appendResponse)
 						.doOnError(observation::error)
 						.doFinally(s -> observation.stop())
 						.contextWrite(ctx -> ctx.put(ObservationThreadLocalAccessor.KEY, observation));

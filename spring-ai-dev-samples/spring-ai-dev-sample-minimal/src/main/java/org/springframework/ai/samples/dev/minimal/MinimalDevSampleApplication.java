@@ -17,6 +17,7 @@
 package org.springframework.ai.samples.dev.minimal;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.observation.DemoObservationFilter;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,7 +33,12 @@ public class MinimalDevSampleApplication {
 	@Bean
 	CommandLineRunner runner(ChatClient.Builder builder) {
 		return args -> builder.build().prompt().user("Tell me a joke").call().chatResponse();
-		// return args -> builder.build().prompt().user("Tell me a joke").stream().chatResponse().blockLast();
+//		 return args -> builder.build().prompt().user("Tell me a joke").stream().chatResponse().blockLast();
+	}
+
+	@Bean
+	DemoObservationFilter demoObservationFilter() {
+		return new DemoObservationFilter();
 	}
 
 	// in case you want to track things in the logs
